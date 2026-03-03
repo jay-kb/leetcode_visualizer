@@ -168,3 +168,16 @@ leetcode_visualizer/
 5. 管理后台需要登录 JWT Token，存储在 localStorage (`adminToken`)
 6. 前端 API 认证：需要登录后在请求头添加 `Authorization: Bearer {token}`
 7. 文件上传目录需要后端有写入权限
+
+## 运行界面
+### 首页
+![img.png](img/img.png)
+### 算法可视化详情页
+![img_1.png](img/img_1.png)
+### 执行流程页面
+![img_2.png](img/img_2.png)
+
+## 后端管理
+
+### 题解和标签管理（可新增编辑等）（包含浏览量统计）
+![img.png](img/img_3.png)
