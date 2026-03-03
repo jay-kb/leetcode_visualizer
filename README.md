@@ -27,16 +27,16 @@ LeetCode 可视化平台 - 一个用于展示算法题解交互式可视化的�
 
 ```bash
 # 一键启动（后端 + 前端构建 + Nginx）
-/Users/qinsx/project/AI/leetcode_visualizer/start.sh
+leetcode_visualizer/start.sh
 
 # 停止所有服务
-/Users/qinsx/project/AI/leetcode_visualizer/stop.sh
+leetcode_visualizer/stop.sh
 ```
 
 ### 后端命令
 
 ```bash
-cd /Users/qinsx/project/AI/leetcode_visualizer
+cd leetcode_visualizer
 
 # 开发模式启动
 mvn spring-boot:run
@@ -52,12 +52,12 @@ java -jar target/visualizer-1.0.0.jar
 
 ```bash
 # 用户端
-cd /Users/qinsx/project/AI/leetcode_visualizer/frontend
+cd leetcode_visualizer/frontend
 npm run dev      # 开发模式
 npm run build    # 生产构建
 
 # 管理后台
-cd /Users/qinsx/project/AI/leetcode_visualizer/frontend/admin
+cd leetcode_visualizer/frontend/admin
 npm run dev      # 开发模式
 npm run build    # 生产构建
 ```
@@ -66,16 +66,16 @@ npm run build    # 生产构建
 
 ```bash
 # 启动
-nginx -c /Users/qinsx/project/AI/leetcode_visualizer/nginx/nginx.conf
+nginx -c leetcode_visualizer/nginx/nginx.conf
 
 # 重载配置
-nginx -s reload -c /Users/qinsx/project/AI/leetcode_visualizer/nginx/nginx.conf
+nginx -s reload -c leetcode_visualizer/nginx/nginx.conf
 
 # 停止
-nginx -s stop -c /Users/qinsx/project/AI/leetcode_visualizer/nginx/nginx.conf
+nginx -s stop -c leetcode_visualizer/nginx/nginx.conf
 
 # 测试配置
-nginx -t -c /Users/qinsx/project/AI/leetcode_visualizer/nginx/nginx.conf
+nginx -t -c leetcode_visualizer/nginx/nginx.conf
 ```
 
 ## 项目结构
@@ -163,8 +163,8 @@ leetcode_visualizer/
 
 1. 前端修改后需要重新 `npm run build` 并重启 Nginx 才能生效
 2. API 请求通过 Nginx 代理到后端 8080 端口
-3. 题解可视化 HTML 文件存储在 `/Users/qinsx/project/AI/leetcode_visualizer/nginx/html/solutions/`
-4. 封面图片存储在 `/Users/qinsx/project/AI/leetcode_visualizer/nginx/html/covers/`
+3. 题解可视化 HTML 文件存储在 `/leetcode_visualizer/nginx/html/solutions/`
+4. 封面图片存储在 `/leetcode_visualizer/nginx/html/covers/`
 5. 管理后台需要登录 JWT Token，存储在 localStorage (`adminToken`)
 6. 前端 API 认证：需要登录后在请求头添加 `Authorization: Bearer {token}`
 7. 文件上传目录需要后端有写入权限
