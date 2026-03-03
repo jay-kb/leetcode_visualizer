@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>两数之和 - 可视化演示</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .header h1 { color: #333; margin-bottom: 8px; }
+        .header .info {
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            gap: 16px;
+        }
+        .badge {
+            background: #e6f7ff;
+            color: #1890ff;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .badge.medium { background: #fff7e6; color: #fa8c16; }
+        .badge.hard { background: #fff1f0; color: #f5222d; }
+        .visualization {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .step {
+            margin-bottom: 24px;
+            padding: 16px;
+            border-radius: 8px;
+            background: #fafafa;
+            border-left: 4px solid #1890ff;
+        }
+        .step.active {
+            background: #e6f7ff;
+            border-left-color: #52c41a;
+        }
+        .step-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .array-container {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+        }
+        .array-item {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+        .array-item.highlight {
+            background: #ff4d4f;
+            color: white;
+            transform: scale(1.1);
+        }
+        .array-item.found {
+            background: #52c41a;
+            color: white;
+        }
+        .array-item.index {
+            border: 2px solid #1890ff;
+        }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        .code-block .keyword { color: #569cd6; }
+        .code-block .number { color: #b5cea8; }
+        .code-block .comment { color: #6a9955; }
+        .result {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .result h3 { color: #52c41a; margin-bottom: 8px; }
+        .result .output {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #1890ff; color: white; }
+        .btn-primary:hover { background: #40a9ff; }
+        .btn-success { background: #52c41a; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>1. 两数之和</h1>
+            <div class="info">
+                <span class="badge">简单</span>
+                <span>数组</span>
+                <span>哈希表</span>
+            </div>
+        </div>
+
+        <div class="visualization">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="runVisualization()">▶ 开始演示</button>
+                <button class="btn btn-success" onclick="reset()">↺ 重置</button>
+            </div>
+
+            <div class="step" id="step1">
+                <div class="step-title">步骤 1: 初始化数组和目标值</div>
+                <div class="array-container">
+                    <div class="array-item index" data-index="0">2</div>
+                    <div class="array-item index" data-index="1">7</div>
+                    <div class="array-item index" data-index="2">11</div>
+                    <div class="array-item index" data-index="3">15</div>
+                </div>
+                <p>目标值 target = <strong>9</strong></p>
+            </div>
+
+            <div class="step" id="step2">
+                <div class="step-title">步骤 2: 遍历数组</div>
+                <p>使用哈希表存储已遍历的元素和索引</p>
+                <div class="array-container" id="hash-table"></div>
+            </div>
+
+            <div class="step" id="step3">
+                <div class="step-title">步骤 3: 查找结果</div>
+                <p>当遍历到元素 7 时，发现 2 已经在哈希表中，2 + 7 = 9</p>
+            </div>
+
+            <div class="result" id="result" style="display:none;">
+                <h3>✅ 找到答案!</h3>
+                <p class="output">索引 [0, 1] => 值 [2, 7]</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        const items = document.querySelectorAll('.array-item');
+        const steps = document.querySelectorAll('.step');
+
+        function runVisualization() {
+            if (currentStep >= 3) return;
+
+            steps[currentStep].classList.add('active');
+
+            if (currentStep === 0) {
+                items[0].classList.add('highlight');
+            } else if (currentStep === 1) {
+                items[0].classList.remove('highlight');
+                items[1].classList.add('highlight');
+                document.getElementById('hash-table').innerHTML = `
+                    <div class="array-item" style="background:#d9f7be;">2→0</div>
+                `;
+            } else if (currentStep === 2) {
+                items[1].classList.remove('highlight');
+                items[0].classList.add('found');
+                items[1].classList.add('found');
+                document.getElementById('result').style.display = 'block';
+            }
+
+            currentStep++;
+        }
+
+        function reset() {
+            currentStep = 0;
+            items.forEach(item => {
+                item.classList.remove('highlight', 'found');
+            });
+            steps.forEach(step => step.classList.remove('active'));
+            document.getElementById('hash-table').innerHTML = '';
+            document.getElementById('result').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

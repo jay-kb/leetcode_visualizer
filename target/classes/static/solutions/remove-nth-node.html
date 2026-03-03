@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>删除链表的倒数第 N 个结点 - 可视化演示</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header h1 { color: #333; margin-bottom: 8px; }
+        .badge { background: #fff7e6; color: #fa8c16; padding: 4px 12px; border-radius: 4px; font-size: 12px; }
+        .visualization { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .linked-list { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 30px 0; flex-wrap: wrap; }
+        .node {
+            display: flex; align-items: center;
+        }
+        .node-val {
+            width: 50px; height: 50px;
+            background: #1890ff; color: white;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 18px;
+            position: relative;
+        }
+        .node-val.target { background: #ff4d4f; }
+        .node-val.deleted { background: #d9d9d9; color: #999; text-decoration: line-through; }
+        .node-arrow {
+            width: 30px; height: 2px; background: #333;
+            position: relative;
+        }
+        .node-arrow::after {
+            content: '→'; position: absolute; right: -5px; top: -10px;
+            font-size: 16px;
+        }
+        .pointer { text-align: center; margin: 20px 0; }
+        .pointer span {
+            display: inline-block; padding: 8px 16px; margin: 4px;
+            background: #722ed1; color: white; border-radius: 20px; font-size: 14px;
+        }
+        .result { background: #f6ffed; border: 1px solid #b7eb8f; padding: 16px; border-radius: 8px; text-align: center; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn-primary { background: #1890ff; color: white; }
+        .btn-success { background: #52c41a; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>19. 删除链表的倒数第 N 个结点</h1>
+            <div class="badge">中等</div>
+        </div>
+        <div class="visualization">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="runVisualization()">▶ 开始演示</button>
+                <button class="btn btn-success" onclick="reset()">↺ 重置</button>
+            </div>
+            <p style="text-align:center;color:#666;">删除倒数第 <strong>n=2</strong> 个节点</p>
+            <div class="linked-list" id="list"></div>
+            <div class="pointer" id="pointers"></div>
+            <div class="result" id="result">
+                <p>双指针: 快指针先走 n 步</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        const values = [1, 2, 3, 4, 5];
+        let step = 0, fast = 0, slow = 0, n = 2;
+
+        function render() {
+            const list = document.getElementById('list');
+            let html = '';
+            values.forEach((v, i) => {
+                html += `<div class="node">
+                    <div class="node-val ${i === values.length - n ? 'target' : ''}" id="node${i}">${v}</div>
+                    ${i < values.length - 1 ? '<div class="node-arrow"></div>' : ''}
+                </div>`;
+            });
+            list.innerHTML = html;
+        }
+        render();
+
+        function runVisualization() {
+            const pointers = document.getElementById('pointers');
+            const result = document.getElementById('result');
+
+            if (step === 0) {
+                pointers.innerHTML = '<span>fast 指向节点 0</span>';
+                fast = n;
+                pointers.innerHTML += '<br><span>快指针先走 n=2 步</span>';
+            } else if (step === 1) {
+                document.getElementById('node1').textContent = '→';
+                pointers.innerHTML = '<span>fast=2, slow=0</span><br><span>同时移动</span>';
+            } else if (step === 2) {
+                pointers.innerHTML = '<span>fast=3, slow=1</span><br><span>fast 到末尾，slow 指向待删除节点</span>';
+            } else if (step === 3) {
+                document.getElementById(`node${values.length - n - 1}`).textContent = '';
+                document.getElementById(`node${values.length - n}`).classList.add('deleted');
+                document.getElementById(`node${values.length - n}`).textContent = 'X';
+                result.innerHTML = '<h3>✅ 删除成功!</h3><p>链表: 1 → 2 → 3 → 5</p>';
+                return;
+            }
+            step++;
+        }
+
+        function reset() {
+            step = 0;
+            render();
+            document.getElementById('pointers').innerHTML = '';
+            document.getElementById('result').innerHTML = '<p>双指针: 快指针先走 n 步</p>';
+        }
+    </script>
+</body>
+</html>

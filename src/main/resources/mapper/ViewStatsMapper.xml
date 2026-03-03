@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.leetcode.visualizer.mapper.ViewStatsMapper">
+
+    <!-- 批量插入或更新浏览量统计 -->
+    <insert id="batchInsertOrUpdate" parameterType="java.util.List">
+        INSERT INTO view_stats (solution_id, stat_date, view_count)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.solutionId}, #{item.statDate}, #{item.viewCount})
+        </foreach>
+        ON DUPLICATE KEY UPDATE view_count = VALUES(view_count)
+    </insert>
+
+    <!-- 查询指定日期范围的浏览量统计 -->
+    <select id="selectByDateRange" resultType="com.leetcode.visualizer.entity.ViewStats">
+        SELECT * FROM view_stats
+        WHERE stat_date BETWEEN #{startDate} AND #{endDate}
+        <if test="solutionId != null">
+            AND solution_id = #{solutionId}
+        </if>
+        ORDER BY stat_date DESC
+    </select>
+
+    <!-- 查询题解的浏览量统计（按维度） -->
+    <select id="selectByDimension" resultType="com.leetcode.visualizer.entity.ViewStats">
+        SELECT * FROM view_stats
+        WHERE solution_id = #{solutionId}
+        AND stat_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY stat_date DESC
+    </select>
+
+    <!-- 查询热门题解排行 -->
+    <select id="selectTopSolutions" resultType="com.leetcode.visualizer.entity.ViewStats">
+        SELECT solution_id, SUM(view_count) as view_count
+        FROM view_stats
+        WHERE stat_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY solution_id
+        ORDER BY view_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计总浏览量 -->
+    <select id="sumViewCount" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(view_count), 0)
+        FROM view_stats
+        WHERE stat_date BETWEEN #{startDate} AND #{endDate}
+        <if test="solutionId != null">
+            AND solution_id = #{solutionId}
+        </if>
+    </select>
+
+</mapper>

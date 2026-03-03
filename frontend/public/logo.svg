@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c4b5fd;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="45" fill="url(#grad1)"/>
+
+  <!-- Lightning bolt -->
+  <path d="M58 20 L42 48 L52 48 L46 80 L62 45 L52 45 Z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+
+  <!-- Code brackets -->
+  <text x="50" y="72" font-family="monospace" font-size="16" font-weight="bold" fill="rgba(255,255,255,0.9)" text-anchor="middle">{'}'}</text>
+</svg>

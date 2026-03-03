@@ -1,0 +1,574 @@
+import { useState, useEffect } from 'react';
+import { Table, Button, Input, Select, message, Popconfirm, Tag as AntTag, Modal, Form, Radio, Checkbox, Upload, Progress } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, LinkOutlined, SaveOutlined, UploadOutlined, FileOutlined, InboxOutlined } from '@ant-design/icons';
+import { solutionAdminApi, tagAdminApi } from '../api';
+import axios from 'axios';
+
+const { TextArea } = Input;
+const { Option } = Select;
+
+const SolutionManage = () => {
+  const [solutions, setSolutions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
+  const [filters, setFilters] = useState({ keyword: '', difficulty: undefined, status: undefined });
+
+  // 弹框相关状态
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [tags, setTags] = useState([]);
+  const [form] = Form.useForm();
+
+  // 上传相关状态
+  const [htmlUploading, setHtmlUploading] = useState(false);
+  const [htmlProgress, setHtmlProgress] = useState(0);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverProgress, setCoverProgress] = useState(0);
+
+  useEffect(() => {
+    loadSolutions();
+    loadTags();
+  }, [pagination.current, filters]);
+
+  const loadSolutions = async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: pagination.current,
+        size: pagination.pageSize,
+        keyword: filters.keyword,
+        difficulty: filters.difficulty,
+        status: filters.status,
+      };
+      const res = await solutionAdminApi.getList(params);
+      const records = res.data?.records || res.records || [];
+      const total = res.data?.total || res.total || 0;
+      setSolutions(records);
+      setPagination(prev => ({ ...prev, total }));
+    } catch (error) {
+      console.error('加载题解失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTags = async () => {
+    try {
+      const res = await tagAdminApi.getAll();
+      let tagsData = res.data || res;
+      if (!tagsData) tagsData = [];
+      if (!Array.isArray(tagsData)) tagsData = tagsData.records || tagsData.list || [];
+      setTags(tagsData.map(tag => ({
+        ...tag,
+        name: tag.name || tag.tagName || tag.label
+      })));
+    } catch (error) {
+      console.error('加载标签失败:', error);
+    }
+  };
+
+  // 上传 HTML 文件
+  const handleHtmlUpload = async (file) => {
+    setHtmlUploading(true);
+    setHtmlProgress(0);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('adminToken');
+
+    try {
+      const res = await axios.post('http://localhost:8080/api/admin/upload/html', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`,
+        },
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setHtmlProgress(percent);
+        },
+      });
+
+      if (res.data.code === 200) {
+        form.setFieldsValue({ htmlFileUrl: res.data.data.filePath });
+        message.success('上传成功');
+      } else {
+        message.error(res.data.message || '上传失败');
+      }
+    } catch (error) {
+      console.error('上传失败:', error);
+      message.error('上传失败，请重试');
+    } finally {
+      setHtmlUploading(false);
+      setHtmlProgress(0);
+    }
+
+    return false; // 阻止默认上传行为
+  };
+
+  // 上传封面图片
+  const handleCoverUpload = async (file) => {
+    setCoverUploading(true);
+    setCoverProgress(0);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('adminToken');
+
+    try {
+      const res = await axios.post('http://localhost:8080/api/admin/upload/cover', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`,
+        },
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setCoverProgress(percent);
+        },
+      });
+
+      if (res.data.code === 200) {
+        form.setFieldsValue({ coverImageUrl: res.data.data.filePath });
+        message.success('封面上传成功');
+      } else {
+        message.error(res.data.message || '上传失败');
+      }
+    } catch (error) {
+      console.error('上传失败:', error);
+      message.error('上传失败，请重试');
+    } finally {
+      setCoverUploading(false);
+      setCoverProgress(0);
+    }
+
+    return false;
+  };
+
+  // 打开新增弹框
+  const handleAdd = () => {
+    setEditingRecord(null);
+    form.resetFields();
+    form.setFieldsValue({
+      difficulty: 1,
+      status: 1,
+      tagIds: [],
+    });
+    setModalVisible(true);
+  };
+
+  // 打开编辑弹框
+  const handleEdit = (record) => {
+    setEditingRecord(record);
+    form.setFieldsValue({
+      title: record.title,
+      description: record.description,
+      leetcodeQuestionId: record.leetcodeQuestionId,
+      leetcodeUrl: record.leetcodeUrl,
+      difficulty: record.difficulty,
+      htmlFileUrl: record.htmlFileUrl,
+      coverImageUrl: record.coverImageUrl,
+      tagIds: record.tags?.map(t => t.id) || [],
+      status: record.status,
+    });
+    setModalVisible(true);
+  };
+
+  // 提交表单
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      setSubmitLoading(true);
+
+      const data = {
+        ...values,
+        tagIds: values.tagIds || [],
+      };
+
+      if (editingRecord) {
+        await solutionAdminApi.update(editingRecord.id, data);
+        message.success('更新成功');
+      } else {
+        await solutionAdminApi.create(data);
+        message.success('创建成功');
+      }
+
+      setModalVisible(false);
+      loadSolutions();
+    } catch (error) {
+      console.error('提交失败:', error);
+      message.error(editingRecord ? '更新失败' : '创建失败');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await solutionAdminApi.delete(id);
+      message.success('删除成功');
+      loadSolutions();
+    } catch (error) {
+      message.error('删除失败');
+    }
+  };
+
+  const handleSearch = (value) => {
+    setFilters(prev => ({ ...prev, keyword: value }));
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
+  const getDifficultyInfo = (difficulty) => {
+    const map = {
+      1: { text: '简单', className: 'difficulty-easy' },
+      2: { text: '中等', className: 'difficulty-medium' },
+      3: { text: '困难', className: 'difficulty-hard' },
+    };
+    return map[difficulty] || { text: '未知', className: '' };
+  };
+
+  const getStatusInfo = (status) => {
+    const map = {
+      0: { text: '草稿', className: 'status-draft' },
+      1: { text: '已发布', className: 'status-published' },
+    };
+    return map[status] || { text: '未知', className: '' };
+  };
+
+  const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      width: 60,
+    },
+    {
+      title: '标题',
+      dataIndex: 'title',
+      ellipsis: true,
+      width: 200,
+    },
+    {
+      title: '题目ID',
+      dataIndex: 'leetcodeQuestionId',
+      width: 80,
+    },
+    {
+      title: 'LeetCode',
+      dataIndex: 'leetcodeUrl',
+      width: 60,
+      render: (url) => {
+        if (!url) return null;
+        return (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#ffa116', fontSize: 16 }}
+          >
+            <LinkOutlined />
+          </a>
+        );
+      },
+    },
+    {
+      title: '难度',
+      dataIndex: 'difficulty',
+      width: 80,
+      render: (difficulty) => {
+        const info = getDifficultyInfo(difficulty);
+        return <span className={`difficulty-tag ${info.className}`}>{info.text}</span>;
+      },
+    },
+    {
+      title: '标签',
+      dataIndex: 'tags',
+      width: 180,
+      render: (tags) => {
+        if (!tags || tags.length === 0) return null;
+        const displayTags = tags.slice(0, 2);
+        return (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {displayTags.map((tag) => (
+              <AntTag key={tag.id} color={tag.color}>{tag.name}</AntTag>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      width: 80,
+      render: (status) => {
+        const info = getStatusInfo(status);
+        return <span className={`status-tag ${info.className}`}>{info.text}</span>;
+      },
+    },
+    {
+      title: '浏览量',
+      dataIndex: 'viewCount',
+      width: 80,
+    },
+    {
+      title: '操作',
+      width: 120,
+      render: (_, record) => (
+        <div className="table-actions">
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
+            编辑
+          </Button>
+          <Popconfirm
+            title="确认删除？"
+            description="删除后数据不可恢复"
+            onConfirm={() => handleDelete(record.id)}
+            okText="确认"
+            cancelText="取消"
+          >
+            <Button type="link" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
+          </Popconfirm>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      {/* 页面头部 */}
+      <div className="page-header">
+        <span className="page-header-title">题解列表</span>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+          新增题解
+        </Button>
+      </div>
+
+      {/* 内容区域 */}
+      <div className="content-card">
+        {/* 搜索栏 */}
+        <div className="search-bar">
+          <Input.Search
+            placeholder="搜索标题"
+            allowClear
+            enterButton={<SearchOutlined />}
+            onSearch={handleSearch}
+            style={{ width: 250 }}
+          />
+          <Select
+            placeholder="难度"
+            allowClear
+            style={{ width: 100 }}
+            onChange={(value) => handleFilterChange('difficulty', value)}
+          >
+            <Option value={1}>简单</Option>
+            <Option value={2}>中等</Option>
+            <Option value={3}>困难</Option>
+          </Select>
+          <Select
+            placeholder="状态"
+            allowClear
+            style={{ width: 100 }}
+            onChange={(value) => handleFilterChange('status', value)}
+          >
+            <Option value={0}>草稿</Option>
+            <Option value={1}>已发布</Option>
+          </Select>
+        </div>
+
+        {/* 表格 */}
+        <Table
+          columns={columns}
+          dataSource={solutions}
+          rowKey="id"
+          loading={loading}
+          scroll={{ x: 1000 }}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            onChange: (page) => setPagination(prev => ({ ...prev, current: page })),
+            showSizeChanger: false,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
+        />
+      </div>
+
+      {/* 编辑弹框 */}
+      <Modal
+        title={editingRecord ? '编辑题解' : '新增题解'}
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        width={700}
+        footer={[
+          <Button key="cancel" onClick={() => setModalVisible(false)}>
+            取消
+          </Button>,
+          <Button key="submit" type="primary" icon={<SaveOutlined />} loading={submitLoading} onClick={handleSubmit}>
+            提交
+          </Button>,
+        ]}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            difficulty: 1,
+            status: 1,
+            tagIds: [],
+          }}
+        >
+          <Form.Item
+            name="title"
+            label="标题"
+            rules={[
+              { required: true, message: '请输入题解标题' },
+              { max: 200, message: '标题不能超过200个字符' }
+            ]}
+          >
+            <Input placeholder="请输入题解标题" />
+          </Form.Item>
+
+          <div style={{ display: 'flex', gap: 16 }}>
+            <Form.Item
+              name="leetcodeQuestionId"
+              label="LeetCode 题目 ID"
+              rules={[{ required: true, message: '请输入题目ID' }]}
+              style={{ flex: 1 }}
+            >
+              <Input placeholder="如: 1, 15, 206" />
+            </Form.Item>
+
+            <Form.Item
+              name="difficulty"
+              label="难度"
+              rules={[{ required: true }]}
+              style={{ flex: 1 }}
+            >
+              <Radio.Group>
+                <Radio.Button value={1}>
+                  <span style={{ color: '#52c41a' }}>简单</span>
+                </Radio.Button>
+                <Radio.Button value={2}>
+                  <span style={{ color: '#fa8c16' }}>中等</span>
+                </Radio.Button>
+                <Radio.Button value={3}>
+                  <span style={{ color: '#f5222d' }}>困难</span>
+                </Radio.Button>
+              </Radio.Group>
+            </Form.Item>
+          </div>
+
+          <Form.Item
+            name="leetcodeUrl"
+            label="LeetCode 题目链接"
+            extra="填写 LeetCode 题目页面地址"
+          >
+            <Input
+              placeholder="https://leetcode.com/problems/two-sum"
+              prefix={<LinkOutlined />}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label="描述"
+          >
+            <TextArea rows={2} placeholder="请输入简短描述" />
+          </Form.Item>
+
+          <Form.Item
+            name="htmlFileUrl"
+            label="HTML 可视化文件"
+            rules={[{ required: true, message: '请上传HTML文件' }]}
+            extra="上传可视化 HTML 文件，支持拖拽上传"
+          >
+            <div>
+              <Upload
+                accept=".html"
+                showUploadList={false}
+                beforeUpload={handleHtmlUpload}
+                disabled={htmlUploading}
+              >
+                <Button icon={<UploadOutlined />} loading={htmlUploading}>
+                  {htmlUploading ? '上传中...' : '选择 HTML 文件'}
+                </Button>
+              </Upload>
+              {htmlUploading && <Progress percent={htmlProgress} size="small" style={{ marginTop: 8 }} />}
+              {form.getFieldValue('htmlFileUrl') && !htmlUploading && (
+                <div style={{ marginTop: 8, color: '#52c41a' }}>
+                  <FileOutlined /> 已选择: {form.getFieldValue('htmlFileUrl')}
+                </div>
+              )}
+            </div>
+          </Form.Item>
+
+          <Form.Item
+            name="coverImageUrl"
+            label="封面图片"
+            extra="上传封面图片，支持 jpg、png、gif 格式"
+          >
+            <div>
+              <Upload
+                accept=".jpg,.jpeg,.png,.gif"
+                showUploadList={false}
+                beforeUpload={handleCoverUpload}
+                disabled={coverUploading}
+              >
+                <Button icon={<UploadOutlined />} loading={coverUploading}>
+                  {coverUploading ? '上传中...' : '选择封面图片'}
+                </Button>
+              </Upload>
+              {coverUploading && <Progress percent={coverProgress} size="small" style={{ marginTop: 8 }} />}
+              {form.getFieldValue('coverImageUrl') && !coverUploading && (
+                <div style={{ marginTop: 8, color: '#52c41a' }}>
+                  <FileOutlined /> 已选择: {form.getFieldValue('coverImageUrl')}
+                </div>
+              )}
+            </div>
+          </Form.Item>
+
+          <Form.Item
+            name="tagIds"
+            label="标签"
+          >
+            <Checkbox.Group>
+              <div className="tag-select-list">
+                {tags.map((tag) => (
+                  <Checkbox
+                    key={tag.id}
+                    value={tag.id}
+                    style={{ marginRight: 8, marginBottom: 8 }}
+                  >
+                    <AntTag color={tag.color}>{tag.name}</AntTag>
+                  </Checkbox>
+                ))}
+              </div>
+            </Checkbox.Group>
+          </Form.Item>
+
+          <Form.Item
+            name="status"
+            label="发布状态"
+          >
+            <Radio.Group>
+              <Radio value={1}>已发布</Radio>
+              <Radio value={0}>草稿</Radio>
+            </Radio.Group>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+};
+
+export default SolutionManage;

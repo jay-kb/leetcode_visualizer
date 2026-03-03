@@ -1,0 +1,5 @@
+/nginx/html/
+/.claude
+/.vscode
+/doc/
+CLAUDE.md

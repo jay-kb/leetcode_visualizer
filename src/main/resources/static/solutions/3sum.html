@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三数之和 - 可视化演示</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .header h1 { color: #333; margin-bottom: 8px; }
+        .header .info {
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            gap: 16px;
+        }
+        .badge { background: #fff7e6; color: #fa8c16; padding: 4px 12px; border-radius: 4px; font-size: 12px; }
+        .visualization { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .step { margin-bottom: 24px; padding: 16px; border-radius: 8px; background: #fafafa; border-left: 4px solid #1890ff; }
+        .step.active { background: #e6f7ff; border-left-color: #52c41a; }
+        .step-title { font-weight: 600; color: #333; margin-bottom: 12px; }
+        .array-container { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+        .array-item {
+            width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+            background: #f0f0f0; border-radius: 8px; font-weight: 600; font-size: 18px; transition: all 0.3s;
+        }
+        .array-item.highlight { background: #ff4d4f; color: white; transform: scale(1.1); }
+        .array-item.selected { background: #1890ff; color: white; }
+        .array-item.found { background: #52c41a; color: white; }
+        .result { background: #f6ffed; border: 1px solid #b7eb8f; padding: 16px; border-radius: 8px; margin-top: 20px; }
+        .result h3 { color: #52c41a; margin-bottom: 8px; }
+        .result .output { font-size: 20px; font-weight: bold; color: #333; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .btn-primary { background: #1890ff; color: white; }
+        .btn-success { background: #52c41a; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>15. 三数之和</h1>
+            <div class="info"><span class="badge">中等</span><span>数组</span><span>双指针</span><span>排序</span></div>
+        </div>
+        <div class="visualization">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="runVisualization()">▶ 开始演示</button>
+                <button class="btn btn-success" onclick="reset()">↺ 重置</button>
+            </div>
+            <div class="step" id="step1">
+                <div class="step-title">步骤 1: 排序数组</div>
+                <div class="array-container">
+                    <div class="array-item" data-index="0">-1</div>
+                    <div class="array-item" data-index="1">0</div>
+                    <div class="array-item" data-index="2">1</div>
+                    <div class="array-item" data-index="3">2</div>
+                    <div class="array-item" data-index="4">-1</div>
+                    <div class="array-item" data-index="5">-4</div>
+                </div>
+            </div>
+            <div class="step" id="step2">
+                <div class="step-title">步骤 2: 固定第一个数， 双指针寻找</div>
+                <p>target = 0</p>
+            </div>
+            <div class="step" id="step3">
+                <div class="step-title">步骤 3: 找到三数之和为0的组合</div>
+                <p>-1 + 0 + 1 = 0 ✓</p>
+            </div>
+            <div class="result" id="result" style="display:none;">
+                <h3>✅ 找到答案!</h3>
+                <p class="output">[[-1,0,1], [-1,-1,2]]</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentStep = 0;
+        const items = document.querySelectorAll('.array-item');
+        const steps = document.querySelectorAll('.step');
+        function runVisualization() {
+            if (currentStep >= 3) return;
+            steps[currentStep].classList.add('active');
+            if (currentStep === 0) { items[0].classList.add('selected'); items[4].classList.add('selected'); }
+            else if (currentStep === 1) { items[1].classList.add('highlight'); items[2].classList.add('highlight'); }
+            else if (currentStep === 2) { items[0].classList.add('found'); items[1].classList.add('found'); items[2].classList.add('found'); document.getElementById('result').style.display = 'block'; }
+            currentStep++;
+        }
+        function reset() {
+            currentStep = 0;
+            items.forEach(item => item.classList.remove('highlight', 'selected', 'found'));
+            steps.forEach(step => step.classList.remove('active'));
+            document.getElementById('result').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

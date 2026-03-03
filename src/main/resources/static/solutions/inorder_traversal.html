@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二叉树中序遍历可视化</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .code-panel {
+            flex: 0 0 380px;
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-size: 0.85rem;
+            color: #00d9ff;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #333;
+        }
+
+        .code-content {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .code-line {
+            padding: 2px 8px;
+            border-radius: 4px;
+            white-space: pre;
+        }
+
+        .code-line.active {
+            background: #264f78;
+            border-left: 3px solid #00ff88;
+        }
+
+        .code-line .keyword { color: #569cd6; }
+        .code-line .type { color: #4ec9b0; }
+        .code-line .method { color: #dcdcaa; }
+        .code-line .comment { color: #6a9955; }
+        .code-line .number { color: #b5cea8; }
+
+        .viz-panel {
+            flex: 1;
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .tree-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow: auto;
+            padding: 20px 10px;
+        }
+
+        .tree-svg {
+            width: 100%;
+            height: 100%;
+            min-height: 300px;
+        }
+
+        .tree-node {
+            fill: #2d2d2d;
+            stroke: #00d9ff;
+            stroke-width: 2;
+            transition: all 0.4s ease;
+        }
+
+        .tree-node.current {
+            fill: #1a3a1a;
+            stroke: #00ff88;
+            stroke-width: 3;
+            filter: drop-shadow(0 0 8px #00ff88);
+        }
+
+        .tree-node.visited {
+            fill: #2a2a4a;
+            stroke: #888;
+        }
+
+        .tree-node.queued {
+            fill: #3a2a1a;
+            stroke: #ffaa00;
+        }
+
+        .tree-label {
+            fill: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+        }
+
+        .tree-edge {
+            stroke: #555;
+            stroke-width: 2;
+            fill: none;
+            transition: stroke 0.4s ease;
+        }
+
+        .tree-edge.active {
+            stroke: #00ff88;
+            stroke-width: 3;
+        }
+
+        .result-panel {
+            background: #252525;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .result-title {
+            font-size: 0.8rem;
+            color: #00d9ff;
+            margin-bottom: 8px;
+        }
+
+        .result-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .result-item {
+            background: #0d1117;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #00ff88;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+        }
+
+        .result-item.just-added {
+            background: #00ff88;
+            color: #000;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #1e1e1e;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .btn-prev {
+            background: #333;
+            color: #fff;
+        }
+
+        .btn-prev:hover:not(:disabled) {
+            background: #444;
+        }
+
+        .btn-next {
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            color: #000;
+        }
+
+        .btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 217, 255, 0.4);
+        }
+
+        .btn-reset {
+            background: #333;
+            color: #fff;
+        }
+
+        .btn-reset:hover:not(:disabled) {
+            background: #444;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .step-indicator {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .step-indicator span {
+            color: #00d9ff;
+            font-weight: bold;
+        }
+
+        .stack-panel {
+            background: #252525;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .stack-title {
+            font-size: 0.8rem;
+            color: #00d9ff;
+            margin-bottom: 8px;
+        }
+
+        .stack-item {
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+            color: #aaa;
+            padding: 3px 0;
+        }
+
+        .stack-item.active {
+            color: #00ff88;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .code-panel {
+                flex: none;
+                max-height: 250px;
+            }
+            .tree-container {
+                min-height: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌲 二叉树中序遍历可视化</h1>
+            <p class="subtitle">Inorder Traversal: 左子树 → 根节点 → 右子树</p>
+        </header>
+
+        <div class="main-content">
+            <div class="code-panel">
+                <div class="panel-title">📝 代码执行</div>
+                <div class="code-content" id="codeContent"></div>
+            </div>
+
+            <div class="viz-panel">
+                <div class="panel-title">🔄 执行过程</div>
+                <div class="tree-container">
+                    <svg class="tree-svg" id="treeSvg"></svg>
+                </div>
+                <div class="result-panel">
+                    <div class="result-title">📊 结果列表</div>
+                    <div class="result-list" id="resultList"></div>
+                </div>
+                <div class="stack-panel">
+                    <div class="stack-title">📚 调用栈</div>
+                    <div id="stackContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-prev" id="btnPrev" onclick="prevStep()">◀ 上一步</button>
+            <span class="step-indicator">步骤 <span id="currentStep">0</span> / <span id="totalSteps">0</span></span>
+            <button class="btn btn-next" id="btnNext" onclick="nextStep()">下一步 ▶</button>
+            <button class="btn btn-reset" onclick="reset()">🔄 重置</button>
+        </div>
+    </div>
+
+    <script>
+        // 示例二叉树
+        //       1
+        //      / \
+        //     2   3
+        //    / \   \
+        //   4   5   6
+        const treeData = {
+            val: 1,
+            left: {
+                val: 2,
+                left: { val: 4, left: null, right: null },
+                right: { val: 5, left: null, right: null }
+            },
+            right: {
+                val: 3,
+                left: null,
+                right: { val: 6, left: null, right: null }
+            }
+        };
+
+        // 源代码（带高亮）
+        const sourceCode = [
+            { text: 'void inorder(TreeNode root, List<Integer> list) {', highlight: false },
+            { text: '    if (root == null) {', highlight: false },
+            { text: '        return;', highlight: false },
+            { text: '    }', highlight: false },
+            { text: '    inorder(root.left, list);', highlight: false },
+            { text: '    list.add(root.val);             // 注意这一句', highlight: false },
+            { text: '    inorder(root.right, list);', highlight: false },
+            { text: '}', highlight: false }
+        ];
+
+        // 生成执行步骤
+        function generateSteps() {
+            const steps = [];
+            let stepId = 0;
+            let result = [];
+            let stack = [];
+
+            // 辅助函数：遍历生成步骤
+            function traverse(node, callStack = [], addedResult = []) {
+                if (!node) {
+                    steps.push({
+                        id: stepId++,
+                        node: null,
+                        line: 2, // if (root == null)
+                        stack: [...callStack],
+                        result: [...addedResult],
+                        action: 'null check - return'
+                    });
+                    return;
+                }
+
+                // 调用 inorder(root.left)
+                const newStack = [...callStack, `inorder(${node.val}).left`];
+                steps.push({
+                    id: stepId++,
+                    node: node.val,
+                    line: 4, // inorder(root.left, list)
+                    stack: newStack,
+                    result: [...addedResult],
+                    action: `调用左子树 inorder(${node.val}.left)`
+                });
+
+                traverse(node.left, newStack, addedResult);
+
+                // 访问根节点
+                const resultAfterAdd = [...addedResult, node.val];
+                steps.push({
+                    id: stepId++,
+                    node: node.val,
+                    line: 5, // list.add(root.val)
+                    stack: [...callStack],
+                    result: resultAfterAdd,
+                    action: `将节点 ${node.val} 加入结果列表`,
+                    addedVal: node.val
+                });
+
+                // 调用 inorder(root.right)
+                steps.push({
+                    id: stepId++,
+                    node: node.val,
+                    line: 6, // inorder(root.right, list)
+                    stack: [...callStack, `inorder(${node.val}).right`],
+                    result: resultAfterAdd,
+                    action: `调用右子树 inorder(${node.val}.right)`
+                });
+
+                traverse(node.right, [...callStack, `inorder(${node.val}).right`], resultAfterAdd);
+            }
+
+            // 添加初始步骤
+            steps.push({
+                id: stepId++,
+                node: 1,
+                line: 0, // 函数开始
+                stack: ['inorder(1)'],
+                result: [],
+                action: '开始中序遍历'
+            });
+
+            traverse(treeData, ['inorder(1)'], []);
+
+            // 添加完成步骤
+            steps.push({
+                id: stepId++,
+                node: null,
+                line: -1,
+                stack: [],
+                result: [4, 5, 2, 6, 3, 1],
+                action: '遍历完成！'
+            });
+
+            return steps;
+        }
+
+        const steps = generateSteps();
+        let currentStep = 0;
+
+        // 渲染代码
+        function renderCode() {
+            const codeContent = document.getElementById('codeContent');
+            codeContent.innerHTML = sourceCode.map((line, idx) => {
+                const highlighted = highlightSyntax(line.text);
+                return `<div class="code-line" data-line="${idx}">${highlighted}</div>`;
+            }).join('');
+        }
+
+        // 语法高亮
+        function highlightSyntax(code) {
+            return code
+                .replace(/\b(void|if|return|else|class|public|private)\b/g, '<span class="keyword">$1</span>')
+                .replace(/\b(TreeNode|List|Integer)\b/g, '<span class="type">$1</span>')
+                .replace(/\b(inorder|add)\b/g, '<span class="method">$1</span>')
+                .replace(/(\/\/.*)/g, '<span class="comment">$1</span>')
+                .replace(/\b(\d+)\b/g, '<span class="number">$1</span>');
+        }
+
+        // 渲染二叉树
+        function renderTree(activeNode, visitedNodes = []) {
+            const svg = document.getElementById('treeSvg');
+            const width = svg.clientWidth || 600;
+            const height = svg.clientHeight || 350;
+
+            // 树结构定义
+            const nodes = [
+                { val: 1, x: width/2, y: 40, parent: null },
+                { val: 2, x: width/2 - 100, y: 120, parent: 1 },
+                { val: 3, x: width/2 + 100, y: 120, parent: 1 },
+                { val: 4, x: width/2 - 150, y: 200, parent: 2 },
+                { val: 5, x: width/2 - 50, y: 200, parent: 2 },
+                { val: 6, x: width/2 + 100, y: 200, parent: 3 }
+            ];
+
+            let svgContent = '';
+
+            // 绘制边
+            nodes.forEach(node => {
+                if (node.parent) {
+                    const parent = nodes.find(n => n.val === node.parent);
+                    const isActive = (activeNode === node.val || activeNode === parent?.val);
+                    svgContent += `<line class="tree-edge ${isActive ? 'active' : ''}"
+                        x1="${parent.x}" y1="${parent.y + 18}"
+                        x2="${node.x}" y2="${node.y - 18}" />`;
+                }
+            });
+
+            // 绘制节点
+            nodes.forEach(node => {
+                const isActive = activeNode === node.val;
+                const isVisited = visitedNodes.includes(node.val);
+                let className = 'tree-node';
+                if (isActive) className += ' current';
+                else if (isVisited) className += ' visited';
+
+                svgContent += `<circle class="${className}" cx="${node.x}" cy="${node.y}" r="18" />
+                    <text class="tree-label" x="${node.x}" y="${node.y}">${node.val}</text>`;
+            });
+
+            svg.innerHTML = svgContent;
+        }
+
+        // 更新界面
+        function updateUI() {
+            const step = steps[currentStep];
+
+            // 更新代码高亮
+            document.querySelectorAll('.code-line').forEach((line, idx) => {
+                line.classList.toggle('active', idx === step.line);
+            });
+
+            // 更新步骤指示器
+            document.getElementById('currentStep').textContent = currentStep;
+            document.getElementById('totalSteps').textContent = steps.length - 1;
+
+            // 更新按钮状态
+            document.getElementById('btnPrev').disabled = currentStep === 0;
+            document.getElementById('btnNext').disabled = currentStep === steps.length - 1;
+
+            // 更新树可视化
+            renderTree(step.node, step.result);
+
+            // 更新结果列表
+            const resultList = document.getElementById('resultList');
+            const prevResult = currentStep > 0 ? steps[currentStep - 1].result : [];
+            const newlyAdded = step.result.find((val, idx) => prevResult[idx] !== val);
+
+            resultList.innerHTML = step.result.map((val, idx) => {
+                const isNew = val === newlyAdded;
+                return `<span class="result-item ${isNew ? 'just-added' : ''}">${val}</span>`;
+            }).join('');
+
+            // 更新调用栈
+            const stackContent = document.getElementById('stackContent');
+            stackContent.innerHTML = step.stack.map((item, idx) => {
+                const isActive = idx === step.stack.length - 1;
+                return `<div class="stack-item ${isActive ? 'active' : ''}">${item}</div>`;
+            }).join('');
+
+            // 滚动到当前执行行
+            const activeLine = document.querySelector('.code-line.active');
+            if (activeLine) {
+                activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // 上一步
+        function prevStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                updateUI();
+            }
+        }
+
+        // 下一步
+        function nextStep() {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                updateUI();
+            }
+        }
+
+        // 重置
+        function reset() {
+            currentStep = 0;
+            updateUI();
+        }
+
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') prevStep();
+            else if (e.key === 'ArrowRight') nextStep();
+            else if (e.key === 'r' || e.key === 'R') reset();
+        });
+
+        // 初始化
+        renderCode();
+        updateUI();
+
+        // 窗口大小变化时重绘
+        window.addEventListener('resize', () => {
+            const step = steps[currentStep];
+            renderTree(step.node, step.result);
+        });
+    </script>
+</body>
+</html>

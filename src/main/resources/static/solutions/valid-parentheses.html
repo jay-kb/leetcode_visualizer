@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>有效的括号 - 可视化演示</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header h1 { color: #333; margin-bottom: 8px; }
+        .badge { background: #e6f7ff; color: #1890ff; padding: 4px 12px; border-radius: 4px; font-size: 12px; }
+        .visualization { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .input-display { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 20px; font-size: 20px; letter-spacing: 4px; }
+        .char { display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 4px; transition: all 0.3s; }
+        .char.current { background: #1890ff; color: white; transform: scale(1.2); }
+        .char.matched { background: #52c41a; color: white; }
+        .char.unmatched { background: #ff4d4f; color: white; }
+        .stack-display { margin: 20px 0; }
+        .stack-display h4 { margin-bottom: 8px; color: #666; }
+        .stack { display: flex; gap: 8px; flex-wrap: wrap; }
+        .stack-item { background: #722ed1; color: white; padding: 8px 16px; border-radius: 8px; animation: popIn 0.3s; }
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+        .result { background: #f6ffed; border: 1px solid #b7eb8f; padding: 16px; border-radius: 8px; margin-top: 20px; }
+        .result.error { background: #fff1f0; border-color: #ffccc7; }
+        .result h3 { margin-bottom: 8px; }
+        .result.success h3 { color: #52c41a; }
+        .result.error h3 { color: #ff4d4f; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn-primary { background: #1890ff; color: white; }
+        .btn-success { background: #52c41a; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>20. 有效的括号</h1>
+            <div class="badge">简单</div>
+        </div>
+        <div class="visualization">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="runVisualization()">▶ 开始演示</button>
+                <button class="btn btn-success" onclick="reset()">↺ 重置</button>
+            </div>
+            <div class="input-display" id="input"></div>
+            <div class="stack-display">
+                <h4>栈:</h4>
+                <div class="stack" id="stack"></div>
+            </div>
+            <div class="result" id="result">
+                <h3>等待输入...</h3>
+            </div>
+        </div>
+    </div>
+    <script>
+        const str = "({[]})";
+        let index = 0;
+        const stack = [];
+        const inputDiv = document.getElementById('input');
+        const stackDiv = document.getElementById('stack');
+        const resultDiv = document.getElementById('result');
+
+        inputDiv.innerHTML = str.split('').map((c, i) => `<span class="char" id="char${i}">${c}</span>`).join('');
+
+        function runVisualization() {
+            if (index >= str.length) return;
+
+            document.querySelectorAll('.char').forEach(c => c.classList.remove('current'));
+            document.getElementById(`char${index}`).classList.add('current');
+
+            const char = str[index];
+            if ('({['.includes(char)) {
+                stack.push(char);
+                stackDiv.innerHTML = stack.map(s => `<span class="stack-item">${s}</span>`).join('');
+            } else {
+                if (stack.length > 0 && matches(stack[stack.length - 1], char)) {
+                    stack.pop();
+                    stackDiv.innerHTML = stack.map(s => `<span class="stack-item">${s}</span>`).join('');
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = '<h3>❌ 无效!</h3><p>括号不匹配</p>';
+                    index = str.length;
+                    return;
+                }
+            }
+            index++;
+            if (index === str.length) {
+                if (stack.length === 0) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = '<h3>✅ 有效!</h3><p>所有括号都匹配</p>';
+                }
+            }
+        }
+
+        function matches(open, close) {
+            return (open === '(' && close === ')') || (open === '{' && close === '}') || (open === '[' && close === ']');
+        }
+
+        function reset() {
+            index = 0;
+            stack.length = 0;
+            stackDiv.innerHTML = '';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '<h3>等待输入...</h3>';
+            document.querySelectorAll('.char').forEach(c => c.classList.remove('current', 'matched', 'unmatched'));
+        }
+    </script>
+</body>
+</html>
