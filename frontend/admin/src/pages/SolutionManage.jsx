@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Input, Select, message, Popconfirm, Tag as AntTag, Modal, Form, Radio, Checkbox, Upload, Progress } from 'antd';
+import { Table, Button, Input, InputNumber, Select, message, Popconfirm, Tag as AntTag, Modal, Form, Radio, Checkbox, Upload, Progress } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, LinkOutlined, SaveOutlined, UploadOutlined, FileOutlined, InboxOutlined } from '@ant-design/icons';
 import { solutionAdminApi, tagAdminApi } from '../api';
 import axios from 'axios';
@@ -7,11 +7,23 @@ import axios from 'axios';
 const { TextArea } = Input;
 const { Option } = Select;
 
+// 首页基础 URL，用于转换相对路径
+const FRONTEND_BASE_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:8082';
+
+// 处理 URL，relativePath 转换为绝对路径
+const getFullUrl = (relativePath) => {
+  if (!relativePath) return '';
+  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+    return relativePath;
+  }
+  return FRONTEND_BASE_URL + relativePath;
+};
+
 const SolutionManage = () => {
   const [solutions, setSolutions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
-  const [filters, setFilters] = useState({ keyword: '', difficulty: undefined, status: undefined });
+  const [filters, setFilters] = useState({ keyword: '', difficulty: undefined, status: undefined, questionId: undefined });
 
   // 弹框相关状态
   const [modalVisible, setModalVisible] = useState(false);
@@ -40,6 +52,7 @@ const SolutionManage = () => {
         keyword: filters.keyword,
         difficulty: filters.difficulty,
         status: filters.status,
+        questionId: filters.questionId,
       };
       const res = await solutionAdminApi.getList(params);
       const records = res.data?.records || res.records || [];
@@ -245,13 +258,13 @@ const SolutionManage = () => {
     {
       title: 'ID',
       dataIndex: 'id',
-      width: 60,
+      width: 70,
     },
     {
       title: '标题',
       dataIndex: 'title',
       ellipsis: true,
-      width: 200,
+      width: 180,
     },
     {
       title: '题目ID',
@@ -259,27 +272,31 @@ const SolutionManage = () => {
       width: 80,
     },
     {
-      title: 'LeetCode',
+      title: '链接',
       dataIndex: 'leetcodeUrl',
-      width: 60,
-      render: (url) => {
-        if (!url) return null;
+      width: 70,
+      render: (url, record) => {
         return (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: '#ffa116', fontSize: 16 }}
-          >
-            <LinkOutlined />
-          </a>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {url && (
+              <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: '#ffa116' }} title="LeetCode">
+                <LinkOutlined />
+              </a>
+            )}
+            {record.htmlFileUrl && (
+              <a href={getFullUrl(record.htmlFileUrl)} target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }} title="可视化">
+                <FileOutlined />
+              </a>
+            )}
+            {!url && !record.htmlFileUrl && <span style={{ color: '#999' }}>-</span>}
+          </div>
         );
       },
     },
     {
       title: '难度',
       dataIndex: 'difficulty',
-      width: 80,
+      width: 70,
       render: (difficulty) => {
         const info = getDifficultyInfo(difficulty);
         return <span className={`difficulty-tag ${info.className}`}>{info.text}</span>;
@@ -288,7 +305,7 @@ const SolutionManage = () => {
     {
       title: '标签',
       dataIndex: 'tags',
-      width: 180,
+      width: 160,
       render: (tags) => {
         if (!tags || tags.length === 0) return null;
         const displayTags = tags.slice(0, 2);
@@ -304,7 +321,7 @@ const SolutionManage = () => {
     {
       title: '状态',
       dataIndex: 'status',
-      width: 80,
+      width: 70,
       render: (status) => {
         const info = getStatusInfo(status);
         return <span className={`status-tag ${info.className}`}>{info.text}</span>;
@@ -363,6 +380,13 @@ const SolutionManage = () => {
             enterButton={<SearchOutlined />}
             onSearch={handleSearch}
             style={{ width: 250 }}
+          />
+          <InputNumber
+            placeholder="题目ID"
+            allowClear
+            min={1}
+            style={{ width: 120 }}
+            onChange={(value) => handleFilterChange('questionId', value)}
           />
           <Select
             placeholder="难度"

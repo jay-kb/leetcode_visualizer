@@ -44,9 +44,10 @@ public class AdminSolutionController {
             @RequestParam(defaultValue = "10") Long size,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer difficulty,
-            @RequestParam(required = false) Integer status) {
-        log.info("获取题解列表: page={}, size={}, keyword={}, difficulty={}, status={}",
-                page, size, keyword, difficulty, status);
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Integer questionId) {
+        log.info("获取题解列表: page={}, size={}, keyword={}, difficulty={}, status={}, questionId={}",
+                page, size, keyword, difficulty, status, questionId);
 
         Page<Solution> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<Solution> wrapper = new LambdaQueryWrapper<>();
@@ -60,6 +61,9 @@ public class AdminSolutionController {
         }
         if (status != null) {
             wrapper.eq(Solution::getStatus, status);
+        }
+        if (questionId != null) {
+            wrapper.eq(Solution::getLeetcodeQuestionId, questionId);
         }
 
         wrapper.orderByDesc(Solution::getCreateTime);

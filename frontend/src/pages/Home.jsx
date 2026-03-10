@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Tag, Pagination, Empty, Spin, Popover, Row, Col, Input, Button, Modal } from 'antd';
-import { EyeOutlined, CodeOutlined, FireOutlined, BookOutlined, ThunderboltOutlined, LinkOutlined, SearchOutlined } from '@ant-design/icons';
+import { Tag, Pagination, Empty, Spin, Popover, Row, Col, Input, Button, Modal, message } from 'antd';
+import { EyeOutlined, CodeOutlined, FireOutlined, BookOutlined, ThunderboltOutlined, LinkOutlined, SearchOutlined, GithubOutlined, MailOutlined } from '@ant-design/icons';
 import { solutionApi, tagApi } from '../api';
 import HotSolutions from '../components/HotSolutions';
 import TodayNewSolutions from '../components/TodayNewSolutions';
@@ -198,9 +198,29 @@ const Home = () => {
             <Link to="/" className="menu-link active">
               <BookOutlined /> 首页
             </Link>
-            <a href={`${import.meta.env.VITE_ADMIN_URL || 'http://localhost:8083'}/login`} className="menu-link">
-              管理后台
-            </a>
+            {import.meta.env.VITE_GITHUB_URL && (
+              <a
+                href={import.meta.env.VITE_GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="menu-link github-link"
+                title="访问 GitHub 仓库"
+              >
+                <GithubOutlined />
+              </a>
+            )}
+            {import.meta.env.VITE_CONTACT_EMAIL && (
+              <a
+                className="menu-link email-link"
+                title={import.meta.env.VITE_CONTACT_EMAIL}
+                onClick={() => {
+                  navigator.clipboard.writeText(import.meta.env.VITE_CONTACT_EMAIL);
+                  message.success('邮箱已复制到剪贴板');
+                }}
+              >
+                <MailOutlined />
+              </a>
+            )}
           </nav>
         </div>
       </header>
@@ -415,6 +435,32 @@ const Home = () => {
           </Col>
         </Row>
       </main>
+
+      {/* 底部栏 */}
+      <footer className="site-footer">
+        <div className="footer-content">
+          {import.meta.env.VITE_ICP_LICENSE && (
+            <a
+              href={`https://beian.miit.gov.cn/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-icp"
+            >
+              {import.meta.env.VITE_ICP_LICENSE}
+            </a>
+          )}
+          {import.meta.env.VITE_POLICE_LICENSE && (
+            <a
+              href={`https://www.beian.gov.cn/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-police"
+            >
+              {import.meta.env.VITE_POLICE_LICENSE}
+            </a>
+          )}
+        </div>
+      </footer>
     </div>
   );
 };

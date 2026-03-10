@@ -186,6 +186,24 @@ body::before {
   background: rgba(99, 102, 241, 0.1);
 }
 
+/* GitHub 图标 */
+.github-link:hover {
+  color: #24292e;
+  background: rgba(36, 41, 46, 0.1);
+}
+
+/* 邮箱图标 */
+.email-link:hover {
+  color: #ea4335;
+  background: rgba(234, 67, 53, 0.1);
+}
+
+/* 图标统一样式 */
+.github-link,
+.email-link {
+  font-size: 18px;
+}
+
 .navbar-menu .active {
   color: var(--primary-color);
   background: rgba(99, 102, 241, 0.12);
@@ -1592,4 +1610,39 @@ body::before {
 .today-new-solutions-time {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* ========================
+   底部栏
+   ======================== */
+.site-footer {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border-top: 1px solid var(--border-color);
+  padding: 24px 0;
+  margin-top: 40px;
+}
+
+.footer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.footer-icp,
+.footer-police {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.footer-icp:hover,
+.footer-police:hover {
+  color: var(--primary-color);
 }
