@@ -7,12 +7,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
-@RequestMapping("/admin/api/upload")
+@RequestMapping("/admin/upload")
 public class UploadController {
 
     @Value("${file.upload.path}")
@@ -137,9 +135,11 @@ public class UploadController {
                 .replaceAll("[^a-zA-Z0-9\\u4e00-\\u9fa5]", "-")
                 .toLowerCase();
 
-        // 如果没有 questionId，使用 uuid
+        // 如果没有 questionId，使用时间戳+随机数
         if (questionId == null) {
-            questionId = Integer.parseInt(UUID.randomUUID().toString().replace("-", "").substring(0, 8), 16);
+            String uuid = UUID.randomUUID().toString().replace("-", "");
+            // 取 UUID 的后 8 位并确保在 Integer 范围内
+            questionId = (int) (Long.parseLong(uuid.substring(24, 32), 16) % Integer.MAX_VALUE);
         }
 
         return questionId + "-" + slug + ".html";

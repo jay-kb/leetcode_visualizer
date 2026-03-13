@@ -28,6 +28,26 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
     }
 
     @Override
+    public List<TagVO> getAllTagVOs() {
+        List<Tag> tags = list(new LambdaQueryWrapper<Tag>()
+                .orderByAsc(Tag::getName));
+
+        List<TagVO> voList = new ArrayList<>();
+        for (Tag tag : tags) {
+            TagVO vo = new TagVO();
+            vo.setId(tag.getId());
+            vo.setName(tag.getName());
+            vo.setColor(tag.getColor());
+            vo.setCreateTime(tag.getCreateTime());
+            // 查询题解数量
+            List<Long> solutionIds = solutionTagRelMapper.selectSolutionIdsByTagId(tag.getId());
+            vo.setSolutionCount((long) solutionIds.size());
+            voList.add(vo);
+        }
+        return voList;
+    }
+
+    @Override
     public IPage<TagVO> getTagPage(Page<TagVO> page, String keyword) {
         LambdaQueryWrapper<Tag> wrapper = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {

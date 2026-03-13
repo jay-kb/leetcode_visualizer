@@ -25,8 +25,8 @@ public class AdminTagController {
      */
     @GetMapping
     public Result<IPage<TagVO>> getTags(
-            @RequestParam(defaultValue = "1") Long page,
-            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(defaultValue = "-1") Long page,
+            @RequestParam(defaultValue = "-1") Long size,
             @RequestParam(required = false) String keyword) {
         log.info("获取标签列表: page={}, size={}, keyword={}", page, size, keyword);
         Page<TagVO> pageParam = new Page<>(page, size);
