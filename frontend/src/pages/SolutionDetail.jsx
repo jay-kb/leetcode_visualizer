@@ -106,9 +106,6 @@ const SolutionDetail = () => {
             <Link to="/" className="menu-link">
               <HomeOutlined /> 首页
             </Link>
-            <a href={`${import.meta.env.VITE_ADMIN_URL || 'http://localhost:8083'}/login`} className="menu-link">
-              <BarChartOutlined /> 管理后台
-            </a>
           </nav>
         </div>
       </header>
@@ -169,7 +166,7 @@ const SolutionDetail = () => {
                 </Link>
                 {solution.leetcodeUrl && (
                   <a
-                    href={solution.leetcodeUrl}
+                    href={solution.leetcodeUrl.startsWith('http') ? solution.leetcodeUrl : `https://${solution.leetcodeUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-leetcode"

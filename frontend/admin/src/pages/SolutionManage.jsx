@@ -81,6 +81,9 @@ const SolutionManage = () => {
     }
   };
 
+// 获取 API 基础地址
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+
   // 上传 HTML 文件
   const handleHtmlUpload = async (file) => {
     setHtmlUploading(true);
@@ -89,10 +92,16 @@ const SolutionManage = () => {
     const formData = new FormData();
     formData.append('file', file);
 
+    // 获取表单中的题目 ID
+    const questionId = form.getFieldValue('leetcodeQuestionId');
+    if (questionId) {
+      formData.append('leetcodeQuestionId', questionId);
+    }
+
     const token = localStorage.getItem('adminToken');
 
     try {
-      const res = await axios.post('http://localhost:8080/api/admin/upload/html', formData, {
+      const res = await axios.post(`${API_BASE_URL}/upload/html`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`,
@@ -131,7 +140,7 @@ const SolutionManage = () => {
     const token = localStorage.getItem('adminToken');
 
     try {
-      const res = await axios.post('http://localhost:8080/api/admin/upload/cover', formData, {
+      const res = await axios.post(`${API_BASE_URL}/upload/cover`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`,
@@ -564,20 +573,22 @@ const SolutionManage = () => {
           <Form.Item
             name="tagIds"
             label="标签"
+            extra="选择相关标签，支持搜索"
           >
-            <Checkbox.Group>
-              <div className="tag-select-list">
-                {tags.map((tag) => (
-                  <Checkbox
-                    key={tag.id}
-                    value={tag.id}
-                    style={{ marginRight: 8, marginBottom: 8 }}
-                  >
-                    <AntTag color={tag.color}>{tag.name}</AntTag>
-                  </Checkbox>
-                ))}
-              </div>
-            </Checkbox.Group>
+            <Select
+              mode="multiple"
+              placeholder="搜索并选择标签"
+              allowClear
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              style={{ width: '100%' }}
+              options={tags.map(tag => ({
+                value: tag.id,
+                label: tag.name,
+              }))}
+            />
           </Form.Item>
 
           <Form.Item

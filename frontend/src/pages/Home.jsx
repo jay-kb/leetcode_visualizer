@@ -214,8 +214,26 @@ const Home = () => {
                 className="menu-link email-link"
                 title={import.meta.env.VITE_CONTACT_EMAIL}
                 onClick={() => {
-                  navigator.clipboard.writeText(import.meta.env.VITE_CONTACT_EMAIL);
-                  message.success('邮箱已复制到剪贴板');
+                  const email = import.meta.env.VITE_CONTACT_EMAIL;
+                  if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(email)
+                      .then(() => message.success('邮箱已复制到剪贴板'))
+                      .catch(() => message.error('复制失败，请手动复制'));
+                  } else {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = email;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                      document.execCommand('copy');
+                      message.success('邮箱已复制到剪贴板');
+                    } catch {
+                      message.error('复制失败，请手动复制');
+                    }
+                    document.body.removeChild(textArea);
+                  }
                 }}
               >
                 <MailOutlined />
