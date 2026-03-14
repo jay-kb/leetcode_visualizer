@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Tag, Pagination, Empty, Spin, Popover, Row, Col, Input, Button, Modal, message } from 'antd';
 import { EyeOutlined, CodeOutlined, FireOutlined, BookOutlined, ThunderboltOutlined, LinkOutlined, SearchOutlined, GithubOutlined, MailOutlined } from '@ant-design/icons';
 import { solutionApi, tagApi } from '../api';
@@ -187,6 +188,16 @@ const Home = () => {
 
   return (
     <div className="home-page">
+      <Helmet>
+        <title>LeetCode 题解可视化 - 算法学习平台</title>
+        <meta name="description" content="通过交互式可视化深入理解 LeetCode 算法执行过程，轻松掌握数据结构与算法，提供热门题解、标签筛选、题号搜索等功能" />
+        <meta name="keywords" content="LeetCode,算法,题解,可视化,数据结构,算法学习,面试,编程" />
+        <link rel="canonical" href={window.location.origin + '/'} />
+        <meta property="og:title" content="LeetCode 题解可视化 - 算法学习平台" />
+        <meta property="og:description" content="通过交互式可视化深入理解算法执行过程" />
+        <meta property="og:type" content="website" />
+      </Helmet>
+
       {/* 顶部导航 */}
       <header className="navbar">
         <div className="navbar-container">

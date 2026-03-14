@@ -1,8 +1,6 @@
 package com.leetcode.visualizer.task;
 
-import com.leetcode.visualizer.entity.Solution;
 import com.leetcode.visualizer.entity.ViewStats;
-import com.leetcode.visualizer.mapper.SolutionMapper;
 import com.leetcode.visualizer.mapper.ViewStatsMapper;
 import com.leetcode.visualizer.mapper.ViewStatsTotalMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +28,6 @@ public class ViewStatsSyncTask {
     @Autowired
     private ViewStatsTotalMapper viewStatsTotalMapper;
 
-    @Autowired
-    private SolutionMapper solutionMapper;
-
     private static final String VIEW_STATS_SOLUTION_KEY = "view:stats:solution:";
     private static final String VIEW_STATS_TOTAL_KEY = "view:stats:total:";
 
@@ -59,30 +54,28 @@ public class ViewStatsSyncTask {
     }
 
     /**
-     * 同步题解浏览量
+     * 同步题解浏览量 - 使用 Redis KEYS 模式匹配获取有数据的题解
      */
     private void syncSolutionViewStats(String date) {
-        // 查询所有题解
-        List<Solution> solutions = solutionMapper.selectList(null);
-        if (solutions == null || solutions.isEmpty()) {
+        // 使用 Redis 模式匹配获取当天有浏览量的题解 ID，避免全表查询
+        String pattern = VIEW_STATS_SOLUTION_KEY + "*:" + date;
+        Set<String> keys = redisTemplate.keys(pattern);
+        if (keys == null || keys.isEmpty()) {
             return;
         }
 
         List<ViewStats> statsList = new ArrayList<>();
-        for (Solution solution : solutions) {
-            String key = VIEW_STATS_SOLUTION_KEY + solution.getId() + ":" + date;
-            Object value = redisTemplate.opsForValue().get(key);
-            if (value != null) {
-                long viewCount = 0;
-                if (value instanceof Number) {
-                    viewCount = ((Number) value).longValue();
-                } else {
-                    viewCount = Long.parseLong(value.toString());
-                }
+        for (String keyStr : keys) {
+            // 从 key 中提取 solutionId: view:stats:solution:{id}:{date}
+            String idPart = keyStr.substring(VIEW_STATS_SOLUTION_KEY.length(), keyStr.lastIndexOf(":" + date));
+            Long solutionId = Long.parseLong(idPart);
 
+            Object value = redisTemplate.opsForValue().get(keyStr);
+            if (value != null) {
+                long viewCount = parseLong(value);
                 if (viewCount > 0) {
                     ViewStats stats = new ViewStats();
-                    stats.setSolutionId(solution.getId());
+                    stats.setSolutionId(solutionId);
                     stats.setStatDate(LocalDate.parse(date));
                     stats.setViewCount(viewCount);
                     statsList.add(stats);
@@ -97,18 +90,23 @@ public class ViewStatsSyncTask {
     }
 
     /**
+     * 将 Object 转换为 long 值
+     */
+    private long parseLong(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        return Long.parseLong(value.toString());
+    }
+
+    /**
      * 同步全站浏览量
      */
     private void syncTotalViewStats(String date) {
         String key = VIEW_STATS_TOTAL_KEY + date;
         Object value = redisTemplate.opsForValue().get(key);
         if (value != null) {
-            long totalViews = 0;
-            if (value instanceof Number) {
-                totalViews = ((Number) value).longValue();
-            } else {
-                totalViews = Long.parseLong(value.toString());
-            }
+            long totalViews = parseLong(value);
 
             if (totalViews > 0) {
                 // 查询是否已存在
@@ -116,7 +114,8 @@ public class ViewStatsSyncTask {
                         viewStatsTotalMapper.selectByDate(LocalDate.parse(date));
 
                 if (existing != null) {
-                    existing.setTotalViews(existing.getTotalViews() + totalViews);
+                    // 直接覆盖当天数据，而不是累加（Redis 中是当天累计值）
+                    existing.setTotalViews(totalViews);
                     viewStatsTotalMapper.updateById(existing);
                 } else {
                     com.leetcode.visualizer.entity.ViewStatsTotal total = new com.leetcode.visualizer.entity.ViewStatsTotal();

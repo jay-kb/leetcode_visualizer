@@ -56,4 +56,18 @@ VALUES
     '## 解题思路\n\n使用快慢指针：\n1. 慢指针指向不重复元素的最后位置\n2. 快指针遍历数组\n3. 当快指针指向的值与慢指针不同时，移动慢指针并更新\n\n- 时间复杂度：O(n)\n- 空间复杂度：O(1)',
     '[{"title":"代码随想录","url":"https://programmercarl.com/0026.%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9.html","type":"article"},{"title":"B站讲解","url":"https://www.bilibili.com/video/BV1ev411P7KR","type":"video"}]',
     NOW(), NOW()
+)，
+(
+    '删除排序数组中的重复项',
+    '给定一个排序数组，你需要在原地删除重复出现的元素。',
+    24,
+    'https://leetcode.cn/problems/remove-duplicates-from-sorted-array/',
+    1,
+    '/solutions/remove-duplicates.html',
+    0, 0, 1, 'admin',
+    '数组, 双指针, 原地修改',
+    '## 解题思路\n\n使用快慢指针：\n1. 慢指针指向不重复元素的最后位置\n2. 快指针遍历数组\n3. 当快指针指向的值与慢指针不同时，移动慢指针并更新\n\n- 时间复杂度：O(n)\n- 空间复杂度：O(1)',
+    '[{"title":"代码随想录","url":"https://programmercarl.com/0026.%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9.html","type":"article"},{"title":"B站讲解","url":"https://www.bilibili.com/video/BV1ev411P7KR","type":"video"}]',
+    NOW(), NOW()
 );
+

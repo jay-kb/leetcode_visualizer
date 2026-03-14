@@ -169,4 +169,13 @@ public class SolutionController {
         }
         return Result.error("删除失败");
     }
+
+    /**
+     * 获取所有题解 ID 列表（用于生成 sitemap）
+     */
+    @GetMapping("/ids")
+    public Result<List<Long>> getAllSolutionIds() {
+        List<Long> ids = solutionService.getAllSolutionIds();
+        return Result.success(ids);
+    }
 }

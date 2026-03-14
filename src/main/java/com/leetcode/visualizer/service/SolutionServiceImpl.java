@@ -339,4 +339,17 @@ public class SolutionServiceImpl extends ServiceImpl<SolutionMapper, Solution> i
         }
         return null;
     }
+
+    @Override
+    public List<Long> getAllSolutionIds() {
+        // 只查询热门前10条（用于 sitemap）
+        LambdaQueryWrapper<Solution> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Solution::getStatus, 1)
+                .eq(Solution::getDeleted, 0)
+                .select(Solution::getId)
+                .orderByDesc(Solution::getViewCount)
+                .last("LIMIT 10");
+        List<Solution> solutions = list(wrapper);
+        return solutions.stream().map(Solution::getId).collect(java.util.stream.Collectors.toList());
+    }
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Spin, message, Button, Tag, Empty, Collapse } from 'antd';
 import { FileTextOutlined, SearchOutlined, RightOutlined, LinkOutlined, BookOutlined, BulbOutlined, ReadOutlined, GithubOutlined } from '@ant-design/icons';
 import { ArrowLeftOutlined, FullscreenOutlined, HomeOutlined, ThunderboltOutlined, EyeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, MailOutlined } from '@ant-design/icons';
@@ -311,6 +312,19 @@ const SolutionDetail = () => {
     }
   };
 
+  // 获取难度文本
+  const getDifficultyText = (difficulty) => {
+    return difficulty === 1 ? '简单' : difficulty === 2 ? '中等' : '困难';
+  };
+
+  // 构建页面标题
+  const pageTitle = solution ? `${solution.title} - 题解 #${solution.leetcodeQuestionId} - LeetCode 可视化` : '题解详情 - LeetCode 可视化';
+
+  // 构建 meta 描述
+  const pageDescription = solution
+    ? `${solution.title} (${getDifficultyText(solution.difficulty)}) - 通过交互式可视化深入理解算法执行过程，掌握解题思路与实现方法`
+    : 'LeetCode 题解可视化平台，通过交互式动画展示算法执行过程';
+
   return (
     <div
       className="detail-page"
@@ -318,6 +332,18 @@ const SolutionDetail = () => {
       tabIndex={-1}
       onKeyDown={handleContainerKeyDown}
     >
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta name="keywords" content={`LeetCode,${solution?.title || '题解'},算法,可视化,数据结构,${getDifficultyText(solution?.difficulty)}`} />
+        {solution && <link rel="canonical" href={`${window.location.origin}/solution/${solution.id}`} />}
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:type" content="article" />
+        {solution?.leetcodeQuestionId && <meta property="article:section" content={`题号 #${solution.leetcodeQuestionId}`} />}
+        {solution?.difficulty && <meta property="article:tag" content={getDifficultyText(solution.difficulty)} />}
+      </Helmet>
+
       {/* 顶部导航 */}
       <header className="navbar">
         <div className="navbar-container">

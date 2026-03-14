@@ -71,4 +71,10 @@ public interface SolutionService extends IService<Solution> {
      * @return 最大题号，缓存未命中返回 null
      */
     Integer getMaxQuestionId();
+
+    /**
+     * 获取所有已发布题解的 ID 列表（用于生成 sitemap）
+     * @return 题解 ID 列表
+     */
+    List<Long> getAllSolutionIds();
 }

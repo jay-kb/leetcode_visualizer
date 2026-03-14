@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# 禁止爬取管理后台
+Disallow: /admin
+Disallow: /login
+
+# Sitemap 位置（动态生成，包含所有题解页面）
+Sitemap: https://www.codevisualis.top/api/sitemap/sitemap.xml
