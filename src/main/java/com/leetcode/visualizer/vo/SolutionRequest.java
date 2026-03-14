@@ -11,6 +11,12 @@ public class SolutionRequest {
 
     private String description;
 
+    private String points;
+
+    private String solutionThoughts;
+
+    private String referenceLinks;
+
     private Integer leetcodeQuestionId;
 
     private String leetcodeUrl;

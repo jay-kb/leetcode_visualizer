@@ -22,6 +22,21 @@ public class Solution {
 
     private String description;
 
+    /**
+     * 考察的问题点，逗号分隔
+     */
+    private String points;
+
+    /**
+     * 解题思路（Markdown）
+     */
+    private String solutionThoughts;
+
+    /**
+     * 相关链接 [{"title":"","url":"","type":""}]
+     */
+    private String referenceLinks;
+
     private Integer leetcodeQuestionId;
 
     private String leetcodeUrl;

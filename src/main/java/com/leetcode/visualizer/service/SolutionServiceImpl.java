@@ -87,6 +87,7 @@ public class SolutionServiceImpl extends ServiceImpl<SolutionMapper, Solution> i
         // 构建查询条件
         LambdaQueryWrapper<Solution> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Solution::getStatus, 1)  // 只查询已发布的
+                .eq(Solution::getDeleted, 0)
                 .orderByDesc(Solution::getViewCount)
                 .orderByDesc(Solution::getCreateTime);
 

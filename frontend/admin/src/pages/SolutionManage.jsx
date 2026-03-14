@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Input, InputNumber, Select, message, Popconfirm, Tag as AntTag, Modal, Form, Radio, Checkbox, Upload, Progress } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, LinkOutlined, SaveOutlined, UploadOutlined, FileOutlined, InboxOutlined } from '@ant-design/icons';
+import { Table, Button, Input, InputNumber, Select, message, Popconfirm, Tag as AntTag, Modal, Form, Radio, Checkbox, Upload, Progress, Tabs, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, LinkOutlined, SaveOutlined, UploadOutlined, FileOutlined, InboxOutlined, MinusCircleOutlined, FileTextOutlined, BulbOutlined, LinkOutlined as RefLinkOutlined } from '@ant-design/icons';
 import { solutionAdminApi, tagAdminApi } from '../api';
 import axios from 'axios';
 
@@ -183,9 +183,24 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
   // 打开编辑弹框
   const handleEdit = (record) => {
     setEditingRecord(record);
+    // 解析相关链接 JSON
+    let referenceLinks = [];
+    if (record.referenceLinks) {
+      try {
+        referenceLinks = typeof record.referenceLinks === 'string'
+          ? JSON.parse(record.referenceLinks)
+          : record.referenceLinks;
+      } catch (e) {
+        console.error('解析 referenceLinks 失败:', e);
+        referenceLinks = [];
+      }
+    }
     form.setFieldsValue({
       title: record.title,
       description: record.description,
+      points: record.points,
+      solutionThoughts: record.solutionThoughts,
+      referenceLinks: referenceLinks,
       leetcodeQuestionId: record.leetcodeQuestionId,
       leetcodeUrl: record.leetcodeUrl,
       difficulty: record.difficulty,
@@ -203,9 +218,20 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
       const values = await form.validateFields();
       setSubmitLoading(true);
 
+      // 处理相关链接：转换为 JSON 字符串
+      let referenceLinksStr = null;
+      if (values.referenceLinks && values.referenceLinks.length > 0) {
+        // 过滤掉空链接
+        const validLinks = values.referenceLinks.filter(link => link.title && link.url);
+        if (validLinks.length > 0) {
+          referenceLinksStr = JSON.stringify(validLinks);
+        }
+      }
+
       const data = {
         ...values,
         tagIds: values.tagIds || [],
+        referenceLinks: referenceLinksStr,
       };
 
       if (editingRecord) {
@@ -267,23 +293,23 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
     {
       title: 'ID',
       dataIndex: 'id',
-      width: 70,
+      width: 60,
     },
     {
       title: '标题',
       dataIndex: 'title',
       ellipsis: true,
-      width: 180,
+      width: 150,
     },
     {
-      title: '题目ID',
+      title: '题号',
       dataIndex: 'leetcodeQuestionId',
-      width: 80,
+      width: 60,
     },
     {
       title: '链接',
       dataIndex: 'leetcodeUrl',
-      width: 70,
+      width: 60,
       render: (url, record) => {
         return (
           <div style={{ display: 'flex', gap: 8 }}>
@@ -305,7 +331,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
     {
       title: '难度',
       dataIndex: 'difficulty',
-      width: 70,
+      width: 60,
       render: (difficulty) => {
         const info = getDifficultyInfo(difficulty);
         return <span className={`difficulty-tag ${info.className}`}>{info.text}</span>;
@@ -314,7 +340,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
     {
       title: '标签',
       dataIndex: 'tags',
-      width: 160,
+      width: 100,
       render: (tags) => {
         if (!tags || tags.length === 0) return null;
         const displayTags = tags.slice(0, 2);
@@ -328,22 +354,97 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
       },
     },
     {
+      title: '考察点',
+      dataIndex: 'points',
+      width: 120,
+      render: (points) => {
+        if (!points) return <span style={{ color: '#999' }}>-</span>;
+        const pointsList = points.split(',').map(p => p.trim()).filter(p => p);
+        return (
+          <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            {pointsList.slice(0, 2).map((point, idx) => (
+              <AntTag key={idx} color="blue" style={{ fontSize: 11, padding: '0 4px' }}>{point}</AntTag>
+            ))}
+            {pointsList.length > 2 && <AntTag style={{ fontSize: 11 }}>+{pointsList.length - 2}</AntTag>}
+          </div>
+        );
+      },
+    },
+    {
+      title: '解题思路',
+      dataIndex: 'solutionThoughts',
+      width: 140,
+      render: (thoughts) => {
+        if (!thoughts) return <span style={{ color: '#999' }}>-</span>;
+        // 提取纯文本，移除 Markdown 格式符号
+        const text = thoughts
+          .replace(/^#+\s*/gm, '')
+          .replace(/\*\*/g, '')
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+          .replace(/\n/g, ' ')
+          .trim();
+        const displayText = text.length > 60 ? text.substring(0, 60) + '...' : text;
+        return (
+          <Tooltip title={text}>
+            <span style={{ cursor: 'pointer', color: '#1890ff' }}>
+              {displayText}
+            </span>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      title: '链接',
+      dataIndex: 'referenceLinks',
+      width: 80,
+      render: (links) => {
+        if (!links) return <span style={{ color: '#999' }}>-</span>;
+        let linkList = [];
+        try {
+          linkList = typeof links === 'string' ? JSON.parse(links) : links;
+        } catch (e) {
+          linkList = [];
+        }
+        if (!linkList || linkList.length === 0) return <span style={{ color: '#999' }}>-</span>;
+        // 只显示链接数量，用弹窗显示列表
+        return (
+          <Tooltip
+            title={
+              <div style={{ maxHeight: 150, overflow: 'auto' }}>
+                {linkList.map((link, idx) => (
+                  <div key={idx} style={{ marginBottom: 4 }}>
+                    <a href={link.url} target="_blank" rel="noopener noreferrer" style={{ color: '#fff' }}>
+                      {link.title}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            }
+          >
+            <AntTag color="purple" style={{ cursor: 'pointer' }}>
+              <LinkOutlined /> {linkList.length}
+            </AntTag>
+          </Tooltip>
+        );
+      },
+    },
+    {
       title: '状态',
       dataIndex: 'status',
-      width: 70,
+      width: 60,
       render: (status) => {
         const info = getStatusInfo(status);
         return <span className={`status-tag ${info.className}`}>{info.text}</span>;
       },
     },
     {
-      title: '浏览量',
+      title: '浏览',
       dataIndex: 'viewCount',
-      width: 80,
+      width: 60,
     },
     {
       title: '操作',
-      width: 120,
+      width: 100,
       render: (_, record) => (
         <div className="table-actions">
           <Button
@@ -460,146 +561,249 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
             tagIds: [],
           }}
         >
-          <Form.Item
-            name="title"
-            label="标题"
-            rules={[
-              { required: true, message: '请输入题解标题' },
-              { max: 200, message: '标题不能超过200个字符' }
+          <Tabs
+            defaultActiveKey="basic"
+            items={[
+              {
+                key: 'basic',
+                label: (
+                  <span>
+                    <FileTextOutlined />
+                    基本信息
+                  </span>
+                ),
+                children: (
+                  <>
+                    <Form.Item
+                      name="title"
+                      label="标题"
+                      rules={[
+                        { required: true, message: '请输入题解标题' },
+                        { max: 200, message: '标题不能超过200个字符' }
+                      ]}
+                    >
+                      <Input placeholder="请输入题解标题" />
+                    </Form.Item>
+
+                    <div style={{ display: 'flex', gap: 16 }}>
+                      <Form.Item
+                        name="leetcodeQuestionId"
+                        label="LeetCode 题目 ID"
+                        rules={[{ required: true, message: '请输入题目ID' }]}
+                        style={{ flex: 1 }}
+                      >
+                        <Input placeholder="如: 1, 15, 206" />
+                      </Form.Item>
+
+                      <Form.Item
+                        name="difficulty"
+                        label="难度"
+                        rules={[{ required: true }]}
+                        style={{ flex: 1 }}
+                      >
+                        <Radio.Group>
+                          <Radio.Button value={1}>
+                            <span style={{ color: '#52c41a' }}>简单</span>
+                          </Radio.Button>
+                          <Radio.Button value={2}>
+                            <span style={{ color: '#fa8c16' }}>中等</span>
+                          </Radio.Button>
+                          <Radio.Button value={3}>
+                            <span style={{ color: '#f5222d' }}>困难</span>
+                          </Radio.Button>
+                        </Radio.Group>
+                      </Form.Item>
+                    </div>
+
+                    <Form.Item
+                      name="leetcodeUrl"
+                      label="LeetCode 题目链接"
+                      extra="填写 LeetCode 题目页面地址"
+                    >
+                      <Input
+                        placeholder="https://leetcode.com/problems/two-sum"
+                        prefix={<LinkOutlined />}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="description"
+                      label="描述"
+                    >
+                      <TextArea rows={2} placeholder="请输入简短描述" />
+                    </Form.Item>
+                  </>
+                ),
+              },
+              {
+                key: 'content',
+                label: (
+                  <span>
+                    <BulbOutlined />
+                    题解内容
+                  </span>
+                ),
+                children: (
+                  <>
+                    <Form.Item
+                      name="points"
+                      label="考察的问题点"
+                      extra="多个考察点用逗号分隔，如：哈希表、数组遍历、时间复杂度优化"
+                    >
+                      <TextArea rows={2} placeholder="如：哈希表, 数组遍历, 时间复杂度优化" />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="solutionThoughts"
+                      label="解题思路"
+                      extra="支持 Markdown 格式"
+                    >
+                      <TextArea rows={6} placeholder="请输入解题思路，支持 Markdown 格式" />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="referenceLinks"
+                      label="相关链接"
+                      extra="添加参考资料链接"
+                    >
+                      <Form.List name="referenceLinks">
+                        {(fields, { add, remove }) => (
+                          <>
+                            {fields.map(({ key, name, ...restField }) => (
+                              <div key={key} style={{ display: 'flex', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+                                <Form.Item
+                                  {...restField}
+                                  name={[name, 'title']}
+                                  style={{ flex: 1, marginBottom: 0 }}
+                                >
+                                  <Input placeholder="标题" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'url']}
+                        style={{ flex: 2, marginBottom: 0 }}
+                      >
+                        <Input placeholder="链接地址" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'type']}
+                        style={{ width: 100, marginBottom: 0 }}
+                      >
+                        <Select placeholder="类型">
+                          <Select.Option value="article">文章</Select.Option>
+                          <Select.Option value="video">视频</Select.Option>
+                          <Select.Option value="discussion">讨论</Select.Option>
+                        </Select>
+                      </Form.Item>
+                      <MinusCircleOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />
+                    </div>
+                  ))}
+                  <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                    添加链接
+                  </Button>
+                </>
+              )}
+            </Form.List>
+          </Form.Item>
+                  </>
+                ),
+              },
+              {
+                key: 'files',
+                label: (
+                  <span>
+                    <UploadOutlined />
+                    文件与标签
+                  </span>
+                ),
+                children: (
+                  <>
+                    <Form.Item
+                      name="htmlFileUrl"
+                      label="HTML 可视化文件"
+                      extra="上传可视化 HTML 文件，支持拖拽上传（可选）"
+                    >
+                      <div>
+                        <Upload
+                          accept=".html"
+                          showUploadList={false}
+                          beforeUpload={handleHtmlUpload}
+                          disabled={htmlUploading}
+                        >
+                          <Button icon={<UploadOutlined />} loading={htmlUploading}>
+                            {htmlUploading ? '上传中...' : '选择 HTML 文件'}
+                          </Button>
+                        </Upload>
+                        {htmlUploading && <Progress percent={htmlProgress} size="small" style={{ marginTop: 8 }} />}
+                        {form.getFieldValue('htmlFileUrl') && !htmlUploading && (
+                          <div style={{ marginTop: 8, color: '#52c41a' }}>
+                            <FileOutlined /> 已选择: {form.getFieldValue('htmlFileUrl')}
+                          </div>
+                        )}
+                      </div>
+                    </Form.Item>
+
+                    <Form.Item
+                      name="coverImageUrl"
+                      label="封面图片"
+                      extra="上传封面图片，支持 jpg、png、gif 格式"
+                    >
+                      <div>
+                        <Upload
+                          accept=".jpg,.jpeg,.png,.gif"
+                          showUploadList={false}
+                          beforeUpload={handleCoverUpload}
+                          disabled={coverUploading}
+                        >
+                          <Button icon={<UploadOutlined />} loading={coverUploading}>
+                            {coverUploading ? '上传中...' : '选择封面图片'}
+                          </Button>
+                        </Upload>
+                        {coverUploading && <Progress percent={coverProgress} size="small" style={{ marginTop: 8 }} />}
+                        {form.getFieldValue('coverImageUrl') && !coverUploading && (
+                          <div style={{ marginTop: 8, color: '#52c41a' }}>
+                            <FileOutlined /> 已选择: {form.getFieldValue('coverImageUrl')}
+                          </div>
+                        )}
+                      </div>
+                    </Form.Item>
+
+                    <Form.Item
+                      name="tagIds"
+                      label="标签"
+                      extra="选择相关标签，支持搜索"
+                    >
+                      <Select
+                        mode="multiple"
+                        placeholder="搜索并选择标签"
+                        allowClear
+                        showSearch
+                        filterOption={(input, option) =>
+                          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        style={{ width: '100%' }}
+                        options={tags.map(tag => ({
+                          value: tag.id,
+                          label: tag.name,
+                        }))}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="status"
+                      label="发布状态"
+                    >
+                      <Radio.Group>
+                        <Radio value={1}>已发布</Radio>
+                        <Radio value={0}>草稿</Radio>
+                      </Radio.Group>
+                    </Form.Item>
+                  </>
+                ),
+              },
             ]}
-          >
-            <Input placeholder="请输入题解标题" />
-          </Form.Item>
-
-          <div style={{ display: 'flex', gap: 16 }}>
-            <Form.Item
-              name="leetcodeQuestionId"
-              label="LeetCode 题目 ID"
-              rules={[{ required: true, message: '请输入题目ID' }]}
-              style={{ flex: 1 }}
-            >
-              <Input placeholder="如: 1, 15, 206" />
-            </Form.Item>
-
-            <Form.Item
-              name="difficulty"
-              label="难度"
-              rules={[{ required: true }]}
-              style={{ flex: 1 }}
-            >
-              <Radio.Group>
-                <Radio.Button value={1}>
-                  <span style={{ color: '#52c41a' }}>简单</span>
-                </Radio.Button>
-                <Radio.Button value={2}>
-                  <span style={{ color: '#fa8c16' }}>中等</span>
-                </Radio.Button>
-                <Radio.Button value={3}>
-                  <span style={{ color: '#f5222d' }}>困难</span>
-                </Radio.Button>
-              </Radio.Group>
-            </Form.Item>
-          </div>
-
-          <Form.Item
-            name="leetcodeUrl"
-            label="LeetCode 题目链接"
-            extra="填写 LeetCode 题目页面地址"
-          >
-            <Input
-              placeholder="https://leetcode.com/problems/two-sum"
-              prefix={<LinkOutlined />}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="描述"
-          >
-            <TextArea rows={2} placeholder="请输入简短描述" />
-          </Form.Item>
-
-          <Form.Item
-            name="htmlFileUrl"
-            label="HTML 可视化文件"
-            rules={[{ required: true, message: '请上传HTML文件' }]}
-            extra="上传可视化 HTML 文件，支持拖拽上传"
-          >
-            <div>
-              <Upload
-                accept=".html"
-                showUploadList={false}
-                beforeUpload={handleHtmlUpload}
-                disabled={htmlUploading}
-              >
-                <Button icon={<UploadOutlined />} loading={htmlUploading}>
-                  {htmlUploading ? '上传中...' : '选择 HTML 文件'}
-                </Button>
-              </Upload>
-              {htmlUploading && <Progress percent={htmlProgress} size="small" style={{ marginTop: 8 }} />}
-              {form.getFieldValue('htmlFileUrl') && !htmlUploading && (
-                <div style={{ marginTop: 8, color: '#52c41a' }}>
-                  <FileOutlined /> 已选择: {form.getFieldValue('htmlFileUrl')}
-                </div>
-              )}
-            </div>
-          </Form.Item>
-
-          <Form.Item
-            name="coverImageUrl"
-            label="封面图片"
-            extra="上传封面图片，支持 jpg、png、gif 格式"
-          >
-            <div>
-              <Upload
-                accept=".jpg,.jpeg,.png,.gif"
-                showUploadList={false}
-                beforeUpload={handleCoverUpload}
-                disabled={coverUploading}
-              >
-                <Button icon={<UploadOutlined />} loading={coverUploading}>
-                  {coverUploading ? '上传中...' : '选择封面图片'}
-                </Button>
-              </Upload>
-              {coverUploading && <Progress percent={coverProgress} size="small" style={{ marginTop: 8 }} />}
-              {form.getFieldValue('coverImageUrl') && !coverUploading && (
-                <div style={{ marginTop: 8, color: '#52c41a' }}>
-                  <FileOutlined /> 已选择: {form.getFieldValue('coverImageUrl')}
-                </div>
-              )}
-            </div>
-          </Form.Item>
-
-          <Form.Item
-            name="tagIds"
-            label="标签"
-            extra="选择相关标签，支持搜索"
-          >
-            <Select
-              mode="multiple"
-              placeholder="搜索并选择标签"
-              allowClear
-              showSearch
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              style={{ width: '100%' }}
-              options={tags.map(tag => ({
-                value: tag.id,
-                label: tag.name,
-              }))}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="status"
-            label="发布状态"
-          >
-            <Radio.Group>
-              <Radio value={1}>已发布</Radio>
-              <Radio value={0}>草稿</Radio>
-            </Radio.Group>
-          </Form.Item>
+          />
         </Form>
       </Modal>
     </div>
